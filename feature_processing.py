@@ -209,3 +209,4 @@ def bin_myFeature(feature_vector, bin_min, bin_max, bins=10):
     #print(inds.shape)
     
     return inds, binned_feature
+
