@@ -5,6 +5,18 @@ import seaborn as sns
 from matplotlib import cm
 
 
+class FeatureCharacterization:
+    def __init__(self, feature):
+        self.feature = feature
+        self.num_entries = len(feature)
+        self.unique_values = self.feature.unique()
+        self.num_unique_values = len(self.unique_values)
+
+    def assess_class_segregation(self, target):
+        contingency = pd.crosstab(self.feature, target)
+
+        return contingency
+
 def assess_feature_frequency(feature, target, mode='subtraction'):
     total = len(feature)
     num_class1 = np.sum(target)
@@ -49,7 +61,6 @@ class FeatureComparison:
 
         self._f1 = self.features.iloc[:, 0]
         self._f2 = self.features.iloc[:, 1]
-
 
 class BinaryComparison:
     def __init__(self, feature1, feature2, target):
