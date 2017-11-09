@@ -18,7 +18,7 @@ class Feature(ColumnData):
     def __init__(self, feature):
         super().__init__(feature)
         self.value_counts_ = self._counts
-        self.value_frequency_ = self._frequencies
+        self.value_frequencies_ = self._frequencies
         if self.num_unique_values == 2:
             self.feature_type = 'binary'
         elif self.num_unique_values > 2:
