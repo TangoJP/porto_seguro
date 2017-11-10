@@ -26,11 +26,34 @@ class Feature(ColumnData):
         else:
             self.feature_type = 'unknown feature type'
 
+    def fuse_categories(self, new_category_list):
+        new_feature = self.data.copy()
+        for i, list_ in enumerate(new_category_list):
+            new_feature[self.data.isin(list_)] = i
+        return new_feature
+
 class ClassTarget(ColumnData):
     def __init__(self, target):
         super().__init__(target)
         self.class_counts_ = self._counts
         self.class_frequencies_ = self._frequencies
+
+class FeatureCollection:
+    def __init__(self, df):
+        self.data = df
+        self.feature_names = df.columns
+        self.collection = {feature: Feature(df[feature]) \
+                                 for feature in self.feature_names}
+
+class CategoricalFeatureCollection(FeatureCollection):
+    def __init__(self, df):
+        super().__init__(df)
+
+    def fuse_all_categories(self, dict_new_categories):
+        new_categoricals = self.data.copy()
+        for key, val in dict_new_categories.items():
+            new_categoricals[key] = self.collection[key].fuse_categories(val)
+        return new_categoricals
 
 # Classes for comparing features with classes and among each other
 class FeatureVsTarget:
@@ -70,7 +93,6 @@ class FeatureVsTarget:
         minmax['min'] = table.min(axis=0)
 
         return table, minmax
-
 
 class FeatureComparison:
     '''
