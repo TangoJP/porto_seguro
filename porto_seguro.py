@@ -36,7 +36,36 @@ cat_fusion_dict = {
  'ps_ind_05_cat': [[0], [3], [1, 4, 5], [6], [-1, 2]]
 }
 
-def fuseCategoricalFeatures(categoricals):
+ordinal_fusion_dict = {
+    'ps_calc_05': [[0, 1, 2, 3, 4, 5], [6]],
+    'ps_calc_06': [[0, 1, 2, 3], [4], [5, 6, 7, 8, 9, 10]],
+    'ps_calc_07': [[0, 1, 2, 3, 4, 5], [6, 7, 8, 9]],
+    'ps_calc_10': [[0], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+                   [14, 15], [16, 17], [18, 19, 20], [21, 22, 23, 24, 25]],
+    'ps_calc_11': [[0], [1], [2, 3, 4, 5, 6, 7], [8], [9], [10, 11, 12, 13],
+                   [14, 15], [16, 17, 18, 19]],
+    'ps_calc_12': [[0, 1, 2, 3, 4], [5, 6], [7], [8], [9, 10]],
+    'ps_calc_13': [[1,2,3,4,5,6,7,8], [9, 10, 11], [12], [13]],
+    'ps_calc_14': [[0], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+                   [14, 15, 16], [17, 18], [19], [20, 21, 22, 23]],
+    'ps_car_11': [[-1, 1, 2], [0], [2]],
+    'ps_ind_01': [[0, 1, 2], [3, 4, 5, 6, 7]],
+    'ps_ind_03': [[0], [1, 2, 3, 4], [5, 6, 7, 8], [9], [10, 11]],
+    'ps_ind_14': [[0], [1, 2], [3, 4]],
+    'ps_ind_15': [[0, 1, 2], [3, 4, 5, 6, 7], [8, 9, 10, 11, 12, 13]],
+    'ps_reg_01': [[0.0], [0.1, 0.2, 0.3, 0.4, 0.5, 0.6], [0.7, 0.8], [0.9]],
+    'ps_reg_02': [[0.0], [0.1, 0.2, 0.3, 0.4],
+                  [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1],
+                  [1.2, 1.3, 1.4, 1.5], [1.6, 1.7], [1.8]]
+}
+
+
+def fuseCategoricalFeatures(categoricals, dictionary='categorical'):
     collection = CategoricalFeatureCollection(categoricals)
-    new_categoricals = collection.fuse_all_categories(cat_fusion_dict)
+    if dictionary == 'categorical':
+        new_categoricals = collection.fuse_all_categories(cat_fusion_dict)
+    elif dictionary == 'ordinal':
+        new_categoricals = collection.fuse_all_categories(ordinal_fusion_dict)
+    else:
+        print('Error: Invalid dictionary option')
     return new_categoricals
