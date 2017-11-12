@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 import seaborn as sns
+import matplotlib.pyplot as plt
 from matplotlib import cm
 
 # Classes for individual features and class target
@@ -31,6 +32,47 @@ class Feature(ColumnData):
         for i, list_ in enumerate(new_category_list):
             new_feature[self.data.isin(list_)] = i
         return new_feature
+
+class OrdinalFeature(Feature):
+    def __init__(self, feature):
+        super().__init__(feature)
+        self.feature_type = 'ordinal'
+
+    def estimateKD(self, graph=True, ax=None, normed=True,
+                   hist_bins='auto', color='skyblue', alpha=0.5,
+                   kernel='gau', bw='normal_reference', fft=True,
+                   weights=None, gridsize=None, adjust=1, cut=3,
+                   clip=(-np.inf, np.inf)):
+        kde = sm.nonparametric.KDEUnivariate(self.data.astype('float'))
+        kde.fit(kernel=kernel, bw=bw, fft=fft, weights=weights,
+                gridsize=gridsize, adjust=adjust, cut=cut, clip=clip)
+
+        if hist_bins == 'auto':
+            bins = self.num_unique_values
+        elif type(hist_bins) == 'int':
+            bins = hist_bins
+        elif type(hist_bins == 'float'):
+            bins = int(hist_bins)
+        else:
+            print('Error: bins must be an integer')
+
+        if graph:
+            if ax is None:
+                fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+
+            if normed:
+                ax.hist(self.data, bins=bins, normed=True,
+                                                alpha=alpha, color=color)
+                ax.plot(kde.support, kde.density, ls='--', color=color)
+            else:
+
+                ax.hist(self.data, bins=bins, normed=False,
+                        alpha=alpha, color=color)
+                ax.plot(kde.support,
+                        self.num_samples*kde.density,
+                        ls='--', color=color)
+
+        return kde
 
 class ClassTarget(ColumnData):
     def __init__(self, target):

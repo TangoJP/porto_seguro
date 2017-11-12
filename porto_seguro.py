@@ -2,8 +2,9 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 import seaborn as sns
+import matplotlib.pyplot as plt
 from matplotlib import cm
-from feature_analysis import (Feature, ClassTarget,
+from feature_analysis import (Feature, ClassTarget, OrdinalFeature,
                               CategoricalFeatureCollection,
                               FeatureVsTarget,
                               BinaryComparison, CategoricalComparison)
@@ -69,3 +70,62 @@ def fuseCategoricalFeatures(categoricals, dictionary='categorical'):
     else:
         print('Error: Invalid dictionary option')
     return new_categoricals
+
+def compareKDEs(bulk_kde, class_kde, span, level=1,
+                        label=None, graph='gain', ax=None, output='both'):
+    '''
+    Calculates conditional probability and its ratio to the bulk frequecy
+    of the class. It can output cond probability, its ratio to the bulk
+    frequency, or both. If graph option is true, it plots the result
+    '''
+    kde1_size = len(bulk_kde.density)
+    kde2_size = len(class_kde.density)
+    density1 = kde1_size* bulk_kde.evaluate(span)
+    density2 = kde2_size* class_kde.evaluate(span)
+    cond_proba_class1_given_val = density2 / density1
+    percent_gain = 100*((cond_proba_class1_given_val/level) - 1)
+
+    if output == 'proba':
+        results = cond_proba_class1_given_val
+    elif output == 'gain':
+        results = percent_gain
+    elif output == None:
+        results = None
+    else:
+        results = cond_proba_class1_given_val, percent_gain
+
+    if graph is not None:
+        if ax is None:
+                fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+        if graph == 'proba':
+            ax.axhline(y=level, color='0.8', ls='--', label='Comparison Level')
+            ax.plot(span, cond_proba_class1_given_val, label=label)
+            ax.set_title('Conditional Probability')
+            y_label = 'Cond Proba of Class1 Given Value'
+        else:
+            ax.axhline(y=0, color='0.8', ls='--')
+            ax.plot(span, percent_gain, label=label)
+            ax.set_title('Percentange Gain from Bulk Frequency')
+            y_label = '%% Gain from Bulk Class1 Freq'
+        ax.set_ylabel(y_label)
+        ax.set_xlabel('Feature Value')
+
+    return results
+
+def myOrdinalFeatureAnalaysis1(feature, target, span, level=1, normed=True,
+                                kernel='gau', bw=0.08, hist_bins=10):
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(12, 4))
+
+    kde_bulk = OrdinalFeature(feature).estimateKD(kernel=kernel, bw=bw,
+                        graph=True, normed=normed, ax=ax1, hist_bins=hist_bins)
+    kde_class1 = OrdinalFeature(feature[target == 1]).estimateKD(normed=normed,
+                        kernel=kernel, bw=bw, ax=ax1, 
+                        graph=True, hist_bins=hist_bins, alpha=0.2, color='red')
+
+    compareKDEs(kde_bulk, kde_class1, span, level=level,
+                                 label=None, graph='proba', ax=ax2, output=None)
+    compareKDEs(kde_bulk, kde_class1, span, level=level,
+                                 label=None, graph='gain', ax=ax3, output=None)
+    plt.tight_layout()
+    return
