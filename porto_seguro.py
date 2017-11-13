@@ -36,25 +36,64 @@ cat_fusion_dict = {
  'ps_ind_04_cat': [[0], [1], [-1]],
  'ps_ind_05_cat': [[0], [3], [1, 4, 5], [6], [-1, 2]]
 }
-'''
+
 ordinal_bw_dict = {
-    'ps_calc_05': ,
-    'ps_calc_06': ,
-    'ps_calc_07': ,
-    'ps_calc_10': ,
-    'ps_calc_11': ,
-    'ps_calc_12': ,
-    'ps_calc_13': ,
-    'ps_calc_14': ,
-    'ps_car_11': ,
-    'ps_ind_01': ,
-    'ps_ind_03': ,
-    'ps_ind_14': ,
-    'ps_ind_15': ,
-    'ps_reg_01': ,
-    'ps_reg_02':
+    'ps_calc_01': 0.07,
+    'ps_calc_02': 0.07,
+    'ps_calc_03': 0.07,
+    'ps_calc_04': 0.4,
+    'ps_calc_05': 0.45,
+    'ps_calc_06': 0.4,
+    'ps_calc_07': 0.4,
+    'ps_calc_08': 0.5,
+    'ps_calc_09': 0.5,
+    'ps_calc_10': 0.55,
+    'ps_calc_11': 0.6,
+    'ps_calc_12': 0.45,
+    'ps_calc_13': 0.5,
+    'ps_calc_14': 0.5,
+    'ps_car_11': 0.37,
+    'ps_car_12': 0.06,
+    'ps_car_13': 0.1,
+    'ps_car_14': 0.04,
+    'ps_car_15': 0.2,
+    'ps_ind_01': 0.42,
+    'ps_ind_03': 0.5,
+    'ps_ind_14': 0.3,
+    'ps_ind_15': 0.55,
+    'ps_reg_01': 0.04,
+    'ps_reg_02': 0.08,
+    'ps_reg_03': 0.15
 }
-'''
+
+ordinal_span_dict = {
+    'ps_calc_01': np.linspace(0, 1, 50),
+    'ps_calc_02': np.linspace(0, 1, 50),
+    'ps_calc_03': np.linspace(0, 1, 50),
+    'ps_calc_04': np.linspace(0, 5, 50),
+    'ps_calc_05': np.linspace(0, 6, 50),
+    'ps_calc_06': np.linspace(0, 10, 50),
+    'ps_calc_07': np.linspace(1, 9, 50),
+    'ps_calc_08': np.linspace(1, 10, 50),
+    'ps_calc_09': np.linspace(0, 7, 50),
+    'ps_calc_10': np.linspace(0, 25, 50),
+    'ps_calc_11': np.linspace(0, 10, 50),
+    'ps_calc_12': np.linspace(0, 10, 50),
+    'ps_calc_13': np.linspace(0, 13, 50),
+    'ps_calc_14': np.linspace(0, 23, 50),
+    'ps_car_11': np.linspace(-1, 3, 50),
+    'ps_car_12': np.linspace(-1, 1, 500),
+    'ps_car_13': np.linspace(0, 4, 500),
+    'ps_car_14': np.linspace(-1, 1, 500),
+    'ps_car_15': np.linspace(0, 4, 500),
+    'ps_ind_01': np.linspace(0, 7, 50),
+    'ps_ind_03': np.linspace(0, 11, 50),
+    'ps_ind_14': np.linspace(0, 4, 50),
+    'ps_ind_15': np.linspace(0, 13, 50),
+    'ps_reg_01': np.linspace(0, 1, 50),
+    'ps_reg_02': np.linspace(0, 2, 50),
+    'ps_reg_03': np.linspace(-1, 4, 500)
+}
 
 def fuseCategoricalFeatures(categoricals, dictionary='categorical'):
     collection = CategoricalFeatureCollection(categoricals)
@@ -201,5 +240,12 @@ def myOrdinalFeatureAnalaysis2(feature, target, span, level=1, normed=True,
     plt.tight_layout()
     return
 
-def convertOrdinalFeatures():
-    pass
+def convertOrdinalFeatures(features, target, verbose=False):
+    converted_features = pd.DataFrame()
+    for i, f in enumerate(features.columns):
+        if verbose:
+            print('Processing %s' %f)
+        F = OrdinalFeature(features[f])
+        cF= F.convertToGain(target, ordinal_span_dict[f], bw=ordinal_bw_dict[f])
+        converted_features[f] = cF
+    return converted_features
