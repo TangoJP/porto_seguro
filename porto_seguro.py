@@ -36,7 +36,7 @@ cat_fusion_dict = {
  'ps_ind_04_cat': [[0], [1], [-1]],
  'ps_ind_05_cat': [[0], [3], [1, 4, 5], [6], [-1, 2]]
 }
-
+'''
 ordinal_bw_dict = {
     'ps_calc_05': ,
     'ps_calc_06': ,
@@ -54,7 +54,7 @@ ordinal_bw_dict = {
     'ps_reg_01': ,
     'ps_reg_02':
 }
-
+'''
 
 def fuseCategoricalFeatures(categoricals, dictionary='categorical'):
     collection = CategoricalFeatureCollection(categoricals)
