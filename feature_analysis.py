@@ -4,6 +4,7 @@ import statsmodels.api as sm
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from sklearn.neighbors import KernelDensity
 
 # Classes for individual features and class target
 class ColumnData:
@@ -43,6 +44,9 @@ class OrdinalFeature(Feature):
                    kernel='gau', bw='normal_reference', fft=True,
                    weights=None, gridsize=None, adjust=1, cut=3,
                    clip=(-np.inf, np.inf)):
+        '''
+        KDE with statsmodels nonparametric estimator.
+        '''
         kde = sm.nonparametric.KDEUnivariate(self.data.astype('float'))
         kde.fit(kernel=kernel, bw=bw, fft=fft, weights=weights,
                 gridsize=gridsize, adjust=adjust, cut=cut, clip=clip)
@@ -71,8 +75,96 @@ class OrdinalFeature(Feature):
                 ax.plot(kde.support,
                         self.num_samples*kde.density,
                         ls='--', color=color)
+        return kde
+
+    def estimateKD2(self, graph=True, ax=None,
+                 span='auto', bandwidth=1, algorithm='auto', kernel='gaussian',
+                 metric='euclidean', atol=0, rtol=0, breadth_first=True,
+                 leaf_size=40, metric_params=None,
+                 hist_bins='auto', color='skyblue', alpha=0.5):
+        '''
+        KDE with sklearn estimator.
+        '''
+        feature = self.data
+
+        kde = KernelDensity(bandwidth=bandwidth, algorithm=algorithm,
+                            kernel=kernel, metric=metric, atol=atol,
+                            rtol=rtol, breadth_first=breadth_first,
+                            leaf_size=leaf_size, metric_params=metric_params)
+        kde.fit(np.array(feature).reshape(-1, 1))
+
+
+        if hist_bins == 'auto':
+            bins = len(feature.unique())
+        elif type(hist_bins) == 'int':
+            bins = hist_bins
+        elif type(hist_bins == 'float'):
+            bins = int(hist_bins)
+        else:
+            print('Error: bins must be an integer')
+
+        if span == 'auto':
+            span = np.linspace(np.min(feature.unique()),
+                               np.max(feature.unique()), 30).reshape(-1, 1)
+        if graph:
+            if ax is None:
+                fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+
+            ax.hist(feature, bins=bins, normed=True,
+                             color=color, alpha=alpha, label=None)
+            ax.plot(span, np.exp(kde.score_samples(span)),
+                             color=color, alpha=alpha, ls='--', label='Bulk')
 
         return kde
+
+    def find_nearest_in_list(self, list_):
+        '''
+        For each entry in the feature (which is a single column),
+        replace the original value with its nearest value in the list_.
+        This is a utility function for KDE method to reduce number of
+        processing.
+        '''
+        nearest = []
+        for i in range(self.num_samples):
+            idx = (np.abs(list_- self.data[i])).argmin()
+            nearest.append(list_[idx])
+        return pd.Series(nearest)
+
+    def convertToGain(self, target, span, mode='percent',
+                   kernel='gau', bw='normal_reference', fft=True,
+                   weights=None, gridsize=None, adjust=1, cut=3,
+                   clip=(-np.inf, np.inf)):
+        '''
+        Convert the feature space into space of gain in conditional probability
+        for each value of the feature. It assumes that one is looking at the
+        conditional probability of being in class1 (i.e. target == 1).
+
+        statsmodel version of KDE used.
+        '''
+        if self.num_samples != len(target):
+            print('Error: Target size must be the same as the feature size.')
+            return
+
+        class1 = OrdinalFeature(self.data[target == 1])
+        bulk_size = len(target)
+        class_size = np.sum(target)
+        class1_freq = class_size / bulk_size
+
+        kde_bulk = self.estimateKD(bw=bw, graph=False)
+        kde_class1 = class1.estimateKD(bw=bw, graph=False)
+
+        bulk_dens = bulk_size*kde_bulk.evaluate(np.array(span))
+        class_dens = class_size*kde_class1.evaluate(np.array(span))
+        proba = class_dens/bulk_dens
+        if mode == 'fraction':
+            gain = (proba/class1_freq) - 1
+        else:
+            gain = 100*((proba/class1_freq) - 1)
+        conversion_dict = dict(zip(span, gain))
+
+        converted = self.find_nearest_in_list(span).replace(conversion_dict)
+
+        return converted
 
 class ClassTarget(ColumnData):
     def __init__(self, target):
