@@ -8,17 +8,18 @@ from sklearn.neighbors import KernelDensity
 
 # Classes for individual features and class target
 class ColumnData:
-    def __init__(self, data):
+    def __init__(self, data, target=None):
         self.data = data
         self.num_samples = len(self.data)
         self.unique_values = sorted(self.data.unique())
         self.num_unique_values = len(self.unique_values)
         self._counts = self.data.value_counts()
         self._frequencies = self._counts / self.num_samples
+        self.target = target
 
 class Feature(ColumnData):
-    def __init__(self, feature):
-        super().__init__(feature)
+    def __init__(self, feature, target=None):
+        super().__init__(feature, target=target)
         self.value_counts_ = self._counts
         self.value_frequencies_ = self._frequencies
         if self.num_unique_values == 2:
@@ -33,6 +34,53 @@ class Feature(ColumnData):
         for i, list_ in enumerate(new_category_list):
             new_feature[self.data.isin(list_)] = i
         return new_feature
+
+    def calculate_IndividualClassFrequency(self, target=None):
+        '''
+        Create contingency table to count how many samples are in each class
+        for each value of binary or categorical feature. This does not work well
+        on continuous feature space.
+        '''
+        if self.target is None:
+            if target is None:
+                print('Error: Target must be set.')
+            else:
+                self.target = target
+
+        contingency = pd.crosstab(self.data, self.target)
+        return contingency
+
+    def calculate_CondProba(self, target=None):
+        '''
+        Calcluate conditional probability of being in each clas given a certain
+        value of a binary or categorical (or ordinal) feature.
+        This does not work well on continuous feature space.
+        '''
+        if target is None:
+            if self.target is None:
+                print('Error: Target must be set.')
+                return
+        else:
+            self.target = target
+
+        contingency = self.calculate_IndividualClassFrequency(self.target)
+        total = contingency.sum(axis=1)
+        probas = contingency.div(total, axis=0)
+        return probas
+
+    def convert2CondProba(self, target_class=1, target=None):
+        if target is None:
+            if self.target is None:
+                print('Error: Target must be set.')
+                return
+        else:
+            self.target = target
+
+        probas = self.calculate_CondProba()
+        vec2proba_dict = probas[target_class].to_dict()
+        feature_proba = self.data.replace(vec2proba_dict)
+
+        return feature_proba
 
 class OrdinalFeature(Feature):
     def __init__(self, feature):

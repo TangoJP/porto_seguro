@@ -8,7 +8,7 @@ from feature_analysis import (Feature, ClassTarget, OrdinalFeature,
                               CategoricalFeatureCollection,
                               FeatureVsTarget,
                               BinaryComparison, CategoricalComparison)
-from .joint import JointProbability, ordinal2probability
+from .joint_probability import JointProbability, ordinal2probability
 
 cat_fusion_dict = {
  'ps_car_01_cat': [[6, 7], [3, 4, 5, 10], [2, 8, 11], [0, 1], [9], [-1]],
