@@ -4,7 +4,6 @@ import statsmodels.api as sm
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from sklearn.neighbors import KernelDensity
 from .feature import (ColumnData, Feature, CategoricalFeature,
                       OrdinalFeature, ClassTarget)
 

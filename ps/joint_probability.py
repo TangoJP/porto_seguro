@@ -4,7 +4,7 @@ import statsmodels.api as sm
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from feature_analysis import (Feature, ClassTarget, OrdinalFeature,
+from .feature_analysis import (Feature, ClassTarget, OrdinalFeature,
                               CategoricalFeatureCollection,
                               FeatureVsTarget,
                               BinaryComparison, CategoricalComparison)
@@ -38,7 +38,6 @@ class JointProbability:
 
         return
 
-
     def transform(self, feature, label=None):
         if label is None:
             label = 'cond_proba'
@@ -56,7 +55,6 @@ class JointProbability:
                        left_on='combined_feature', right_on='combined_feature')
 
         return df2[label]
-
 
     def fit_transform(self, feature, target, label=None):
         '''
