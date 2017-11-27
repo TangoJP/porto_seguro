@@ -359,3 +359,106 @@ def print_clf_scores2(result, trainset=False,
         plt.show()
 
     return
+
+
+def my_gini(y_true, y_probas):
+    auc = roc_auc_score(y_true, y_probas)
+    gini = 2*auc - 1
+    return gini
+
+def plot_calibration_curve_ps(est, name, fig_index, data, cv=2):
+    """Plot calibration curve for est w/o and with calibration.
+    Adopted from: http://scikit-learn.org/stable/auto_examples/calibration/plot_calibration_curve.html#sphx-glr-auto-examples-calibration-plot-calibration-curve-py
+
+    Plots reliability curves with and withou calibrations, along with Logistic
+    regression fits. Isotonic and sigmoid calibrations are included.
+    """
+
+    X_train = data[0]
+    X_test = data[1]
+    y_train = data[2]
+    y_test = data[3]
+
+    y = np.concatenate([y_train, y_test], axis=0)
+
+    # Calibrated with sigmoid calibration
+    sigmoid = CalibratedClassifierCV(est, cv=cv, method='sigmoid')
+
+    fig = plt.figure(1, figsize=(15, 10))
+    ax1 = plt.subplot2grid((4, 6), (0, 0), colspan=2, rowspan=2)
+    ax2 = plt.subplot2grid((4, 6), (0, 2), colspan=2, rowspan=2)
+    ax3 = plt.subplot2grid((4, 6), (0, 4), colspan=2, rowspan=2)
+    ax4 = plt.subplot2grid((4, 6), (2, 0), colspan=6,  rowspan=2)
+
+    ax1.plot([0, 1], [0, 1], "k:", label="Perfectly calibrated")
+
+    classifiers = []
+    for clf, name in [(est, name),
+                      (sigmoid, name + ' + Sigmoid')]:
+        clf.fit(X_train, y_train)
+        classifiers.append(clf)
+
+        y_pred = clf.predict(X_test)
+        if hasattr(clf, "predict_proba"):
+            prob_pos = clf.predict_proba(X_test)[:, 1]
+            y_proba = prob_pos.copy()
+        else:  # use decision function
+            prob_pos = clf.decision_function(X_test)
+            y_proba = prob_pos.copy()
+            prob_pos = \
+                (prob_pos - prob_pos.min()) / (prob_pos.max() - prob_pos.min())
+
+        clf_score = my_gini(y_test, prob_pos)
+        print("%s:" % name)
+        print("\tGini: %1.3f" % (clf_score))
+        print("\tPrecision: %1.3f" % precision_score(y_test, y_pred))
+        print("\tRecall: %1.3f" % recall_score(y_test, y_pred))
+        print("\tF1: %1.3f" % f1_score(y_test, y_pred))
+        print("\tAve. Precision Score: %1.3f\n" % \
+                            average_precision_score(y_test, y_proba))
+
+        fraction_of_positives, mean_predicted_value = \
+            calibration_curve(y_test, prob_pos, n_bins=10)
+
+        ax1.plot(mean_predicted_value, fraction_of_positives, "s-",
+                 label="%s (%1.3f)" % (name, clf_score))
+
+        fpr, tpr, thresholds = roc_curve(y_test, y_proba, drop_intermediate=False)
+        roc_auc = roc_auc_score(y_test, y_proba)
+        ax2.plot(fpr, tpr, ls='-', label="%s (%1.3f)" % (name, roc_auc))
+
+        precision, recall, _ = precision_recall_curve(y_test, y_proba)
+        ax3.plot(recall, precision)
+
+        ax4.hist(prob_pos, range=(0, 1), bins=10,
+                        label='%s' % name, histtype="step", lw=2)
+
+
+    ax1.set_xlabel("Score", fontsize=14)
+    ax1.set_ylabel("Fraction of positives", fontsize=14)
+    ax1.set_ylim([-0.05, 1.05])
+    ax1.legend(loc="lower right")
+    ax1.set_title('Calibration plots  (reliability curve)', fontsize=16)
+
+    ax2.set_xlabel("False Positive Rate", fontsize=14)
+    ax2.set_ylabel("True Positive Rate", fontsize=14)
+    ax2.set_ylim([-0.05, 1.05])
+    ax2.legend(loc="lower right")
+    ax2.set_title('ROC Curve', fontsize=16)
+
+    ax3.set_xlabel("Recall", fontsize=14)
+    ax3.set_ylabel("Precision", fontsize=14)
+    ax3.set_ylim([-0.05, 1.05])
+    ax3.legend(loc="lower center")
+    ax3.set_title('Precision-Recall Curve', fontsize=16)
+
+    ax4.set_xlabel("Mean predicted value", fontsize=14)
+    ax4.set_ylabel("Count", fontsize=14)
+    ax4.legend(loc="upper center")
+    ax4.set_title('Classification Result', fontsize=16)
+
+    plt.tight_layout()
+
+    plt.show()
+
+    return classifiers
